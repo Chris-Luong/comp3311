@@ -59,80 +59,124 @@ WHERE o.name = 'School of Law' AND stu.stype = 'intl' AND e.mark > 85;
     -- doing the courses in the same term by finding duplicate term ids
 create or replace view Q4(unswid, name)
 as
-with temp as (
-    select DISTINCT p.unswid, p.name, t.name as term, t.id as term_id, s.code
-    from course_enrolments e
-        join students stu on e.student = stu.id
-        join people p on stu.id = p.id
-        join courses c on e.course = c.id
-        join terms t on c.term = t.id
-        join subjects s on c.subject = s.id
-    where s.code = 'COMP9020' OR s.code = 'COMP9331' AND stu.stype = 'local'       
+WITH temp AS (
+    SELECT DISTINCT p.unswid, p.name, t.name AS term, t.id AS term_id, s.code
+    FROM course_enrolments e
+        JOIN students stu ON e.student = stu.id
+        JOIN people p ON stu.id = p.id
+        JOIN courses c ON e.course = c.id
+        JOIN terms t ON c.term = t.id
+        JOIN subjects s ON c.subject = s.id
+    WHERE s.code = 'COMP9020' OR s.code = 'COMP9331' AND stu.stype = 'local'       
 )
-select distinct t1.unswid, t1.name
-from temp t1
-group by unswid, name, term_id
-having count(term_id) > 1;
+SELECT DISTINCT t1.unswid, t1.name
+FROM temp t1
+GROUP BY unswid, name, term_id
+HAVING count(term_id) > 1;
 
 
-create or replace view COMP3331WithMark(term, counter)
+-- 2 helper views for q5a
+create or replace view total_marks_q5a(term_id, term, count)
 as
-select c.term, count(*)
-from People p
-join Students s on s.id = p.id
-join Course_Enrolments ce on ce.student = s.id
-join Courses c on c.id = ce.course
-join Subjects subj on subj.id = c.subject
-join Terms t on t.id = c.term
-where subj.code = 'COMP3311' and 
-ce.mark is not null and 
-t.year between 2009 and 2012
-group by c.term
+SELECT c.term AS term_id, t.name, count(*)
+FROM People p
+JOIN Students s ON s.id = p.id
+JOIN Course_Enrolments ce ON ce.student = s.id
+JOIN Courses c ON c.id = ce.course
+JOIN Subjects subj ON subj.id = c.subject
+JOIN Terms t ON t.id = c.term
+WHERE subj.code = 'COMP3311' AND 
+ce.mark IS NOT NULL AND 
+t.year BETWEEN 2009 AND 2012
+GROUP BY c.term, t.name
 ;
-
-create or replace view COMP3331WithFailingMark(term, counter)
+create or replace view failing_marks_q5a(term_id, term, count)
 as
-select c.term, count(*)
-from People p
-join Students s on s.id = p.id
-join Course_Enrolments ce on ce.student = s.id
-join Courses c on c.id = ce.course
-join Subjects subj on subj.id = c.subject
-join Terms t on t.id = c.term
-where subj.code = 'COMP3311' and 
-ce.mark < 50 and 
-t.year between 2009 and 2012
-group by c.term
+SELECT c.term AS term_id, t.name, count(*)
+FROM People p
+JOIN Students s ON s.id = p.id
+JOIN Course_Enrolments ce ON ce.student = s.id
+JOIN Courses c ON c.id = ce.course
+JOIN Subjects subj ON subj.id = c.subject
+JOIN Terms t ON t.id = c.term
+WHERE subj.code = 'COMP3311' AND 
+ce.mark < 50 AND 
+t.year BETWEEN 2009 AND 2012
+GROUP BY c.term, t.name
 ;
 -- Q5a
+-- Explanation
+    -- Get non-null marks from term and the failing marks from the same term for COMP3311 using helper views
+    -- Divide both of these casted as numeric so result is not 0, rounded to 4dp.
 create or replace view Q5a(term, min_fail_rate)
 as
-select wm.term, wm.count / fm.count as fail_rate
-from COMP3331WithMark wm join COMP3331WithFailingMark fm on wm.term = fm.term
-group by wm.term
-order by fail_rate asc
-limit 1
+WITH temp AS (
+    SELECT fm.term_id, fm.term, round (cast(fm.count AS numeric) / cast(tm.count AS numeric), 4) AS min_fail_rate
+    FROM total_marks_q5a tm JOIN failing_marks_q5a fm ON tm.term_id = fm.term_id
+    GROUP BY fm.term_id, fm.term, min_fail_rate
+)
+SELECT term, min_fail_rate
+FROM temp
+WHERE min_fail_rate = (select min(min_fail_rate) FROM temp)
+GROUP BY term, min_fail_rate
 ;
 
 
+-- 2 helper views for q5b
+create or replace view total_marks_q5a(term_id, term, count)
+as
+SELECT c.term AS term_id, t.name, count(*)
+FROM People p
+JOIN Students s ON s.id = p.id
+JOIN Course_Enrolments ce ON ce.student = s.id
+JOIN Courses c ON c.id = ce.course
+JOIN Subjects subj ON subj.id = c.subject
+JOIN Terms t ON t.id = c.term
+WHERE subj.code = 'COMP3311' AND 
+ce.mark IS NOT NULL AND 
+t.year BETWEEN 2016 AND 2019
+GROUP BY c.term, t.name
+;
+create or replace view failing_marks_q5a(term_id, term, count)
+as
+SELECT c.term AS term_id, t.name, count(*)
+FROM People p
+JOIN Students s ON s.id = p.id
+JOIN Course_Enrolments ce ON ce.student = s.id
+JOIN Courses c ON c.id = ce.course
+JOIN Subjects subj ON subj.id = c.subject
+JOIN Terms t ON t.id = c.term
+WHERE subj.code = 'COMP3311' AND 
+ce.mark < 50 AND 
+t.year BETWEEN 2016 AND 2019
+GROUP BY c.term, t.name
+;
 -- Q5b
--- create or replace view Q5b(term, min_fail_rate)
--- as
--- --... SQL statements, possibly using other views/functions defined by you ...
--- ;
+create or replace view Q5b(term, min_fail_rate)
+as
+WITH temp AS (
+    SELECT fm.term_id, fm.term, round (cast(fm.count AS numeric) / cast(tm.count AS numeric), 4) AS min_fail_rate
+    FROM total_marks_q5a tm JOIN failing_marks_q5a fm ON tm.term_id = fm.term_id
+    GROUP BY fm.term_id, fm.term, min_fail_rate
+)
+SELECT term, min_fail_rate
+FROM temp
+WHERE min_fail_rate = (select min(min_fail_rate) FROM temp)
+GROUP BY term, min_fail_rate
+;
 
 
 -- Q6
-	Q6(id integer,code text) returns integer
-as $$
-select ce.mark
-from People p
-join Students s on s.id = $1
-join Course_Enrolments ce on ce.student = s.id
-join Courses c on c.id = ce.course
-join Subjects subj on subj.id = c.subject
-where subj.code = $2 
-$$ language sql;
+-- 	Q6(id integer,code text) returns integer
+-- as $$
+-- select ce.mark
+-- from People p
+-- join Students s ON s.id = $1
+-- join Course_Enrolments ce ON ce.student = s.id
+-- join Courses c on c.id = ce.course
+-- join Subjects subj on subj.id = c.subject
+-- where subj.code = $2 
+-- $$ language sql;
 
 
 -- Q7
