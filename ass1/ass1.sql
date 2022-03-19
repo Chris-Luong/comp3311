@@ -80,13 +80,13 @@ create or replace view total_marks_q5a(term_id, term, count)
 as
 SELECT c.term AS term_id, t.name, count(*)
 FROM People p
-JOIN Students s ON s.id = p.id
-JOIN Course_Enrolments ce ON ce.student = s.id
-JOIN Courses c ON c.id = ce.course
-JOIN Subjects subj ON subj.id = c.subject
+JOIN Students stu ON stu.id = p.id
+JOIN Course_Enrolments e ON e.student = stu.id
+JOIN Courses c ON c.id = e.course
+JOIN Subjects s ON s.id = c.subject
 JOIN Terms t ON t.id = c.term
-WHERE subj.code = 'COMP3311' AND 
-ce.mark IS NOT NULL AND 
+WHERE s.code = 'COMP3311' AND 
+e.mark IS NOT NULL AND 
 t.year BETWEEN 2009 AND 2012
 GROUP BY c.term, t.name
 ;
@@ -94,13 +94,13 @@ create or replace view failing_marks_q5a(term_id, term, count)
 as
 SELECT c.term AS term_id, t.name, count(*)
 FROM People p
-JOIN Students s ON s.id = p.id
-JOIN Course_Enrolments ce ON ce.student = s.id
-JOIN Courses c ON c.id = ce.course
-JOIN Subjects subj ON subj.id = c.subject
+JOIN Students stu ON stu.id = p.id
+JOIN Course_Enrolments e ON e.student = stu.id
+JOIN Courses c ON c.id = e.course
+JOIN Subjects s ON s.id = c.subject
 JOIN Terms t ON t.id = c.term
-WHERE subj.code = 'COMP3311' AND 
-ce.mark < 50 AND 
+WHERE s.code = 'COMP3311' AND 
+e.mark < 50 AND 
 t.year BETWEEN 2009 AND 2012
 GROUP BY c.term, t.name
 ;
@@ -123,31 +123,31 @@ GROUP BY term, min_fail_rate
 
 
 -- 2 helper views for q5b
-create or replace view total_marks_q5a(term_id, term, count)
+create or replace view total_marks_q5b(term_id, term, count)
 as
 SELECT c.term AS term_id, t.name, count(*)
 FROM People p
-JOIN Students s ON s.id = p.id
-JOIN Course_Enrolments ce ON ce.student = s.id
-JOIN Courses c ON c.id = ce.course
-JOIN Subjects subj ON subj.id = c.subject
+JOIN Students stu ON stu.id = p.id
+JOIN Course_Enrolments e ON e.student = stu.id
+JOIN Courses c ON c.id = e.course
+JOIN Subjects s ON s.id = c.subject
 JOIN Terms t ON t.id = c.term
-WHERE subj.code = 'COMP3311' AND 
-ce.mark IS NOT NULL AND 
+WHERE s.code = 'COMP3311' AND 
+e.mark IS NOT NULL AND 
 t.year BETWEEN 2016 AND 2019
 GROUP BY c.term, t.name
 ;
-create or replace view failing_marks_q5a(term_id, term, count)
+create or replace view failing_marks_q5b(term_id, term, count)
 as
 SELECT c.term AS term_id, t.name, count(*)
 FROM People p
-JOIN Students s ON s.id = p.id
-JOIN Course_Enrolments ce ON ce.student = s.id
-JOIN Courses c ON c.id = ce.course
-JOIN Subjects subj ON subj.id = c.subject
+JOIN Students stu ON stu.id = p.id
+JOIN Course_Enrolments e ON e.student = stu.id
+JOIN Courses c ON c.id = e.course
+JOIN Subjects s ON s.id = c.subject
 JOIN Terms t ON t.id = c.term
-WHERE subj.code = 'COMP3311' AND 
-ce.mark < 50 AND 
+WHERE s.code = 'COMP3311' AND 
+e.mark < 50 AND 
 t.year BETWEEN 2016 AND 2019
 GROUP BY c.term, t.name
 ;
@@ -156,7 +156,7 @@ create or replace view Q5b(term, min_fail_rate)
 as
 WITH temp AS (
     SELECT fm.term_id, fm.term, round (cast(fm.count AS numeric) / cast(tm.count AS numeric), 4) AS min_fail_rate
-    FROM total_marks_q5a tm JOIN failing_marks_q5a fm ON tm.term_id = fm.term_id
+    FROM total_marks_q5b tm JOIN failing_marks_q5b fm ON tm.term_id = fm.term_id
     GROUP BY fm.term_id, fm.term, min_fail_rate
 )
 SELECT term, min_fail_rate
