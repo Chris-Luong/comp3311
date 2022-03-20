@@ -298,94 +298,64 @@
     FROM Terms
     WHERE term.id = id_result_from_query;
 
-
-    -- that gives the term and the minimum fail rate of the course COMP3311 from year 2009 to year 2012. 
-    create or replace view COMP3331WithMark(term, counter)
+    -- 2 helper views for q5a
+    create or replace view total_marks_q5a(term_id, term, count)
     as
-    select c.term, count(*)
-    from People p
-    join Students s on s.id = p.id
-    join Course_Enrolments ce on ce.student = s.id
-    join Courses c on c.id = ce.course
-    join Subjects subj on subj.id = c.subject
-    join Terms t on t.id = c.term
-    where subj.code = 'COMP3311' and 
-    ce.mark is not null and 
-    t.year between 2009 and 2012
-    group by c.term
+    SELECT c.term AS term_id, t.name, count(*)
+    FROM course_enrolments e
+    JOIN students stu ON e.student = stu.id
+    JOIN people p ON stu.id = p.id
+    JOIN courses c ON c.id = e.course
+    JOIN subjects s ON s.id = c.subject
+    JOIN terms t ON t.id = c.term
+    WHERE s.code = 'COMP3311' AND 
+    e.mark IS NOT NULL AND 
+    t.year BETWEEN 2009 AND 2012
+    GROUP BY c.term, t.name
     ;
-
-    create or replace view COMP3331WithFailingMark(term, counter)
+    create or replace view failing_marks_q5a(term_id, term, count)
     as
-    select c.term, count(*)
-    from People p
-    join Students s on s.id = p.id
-    join Course_Enrolments ce on ce.student = s.id
-    join Courses c on c.id = ce.course
-    join Subjects subj on subj.id = c.subject
-    join Terms t on t.id = c.term
-    where subj.code = 'COMP3311' and 
-    ce.mark < 50 and 
-    t.year between 2009 and 2012
-    group by c.term
+    SELECT c.term AS term_id, t.name, count(*)
+    FROM course_enrolments e
+    JOIN students stu ON e.student = stu.id
+    JOIN people p ON stu.id = p.id
+    JOIN courses c ON c.id = e.course
+    JOIN subjects s ON s.id = c.subject
+    JOIN terms t ON t.id = c.term
+    WHERE s.code = 'COMP3311' AND 
+    e.mark < 50 AND 
+    t.year BETWEEN 2009 AND 2012
+    GROUP BY c.term, t.name
     ;
     -- Q5a
+    -- Explanation
+        -- Get non-null marks from term and the failing marks from the same term for COMP3311 using helper views
+        -- Divide both of these casted as numeric so result is not 0, rounded to 4dp.
     create or replace view Q5a(term, min_fail_rate)
     as
-    select wm.term, wm.counter / fm.counter as fail_rate
-    from COMP3331WithMark wm join COMP3331WithFailingMark fm on wm.term = fm.term
-    group by wm.term, fail_rate
-    order by fail_rate asc
-    limit 1
-
-    with COMP3331WithMark
-    as (
-        select c.term, count(*)
-        from People p
-        join Students s on s.id = p.id
-        join Course_Enrolments ce on ce.student = s.id
-        join Courses c on c.id = ce.course
-        join Subjects subj on subj.id = c.subject
-        join Terms t on t.id = c.term
-        where subj.code = 'COMP3311' and 
-        ce.mark is not null and 
-        t.year between 2009 and 2012
-        group by c.term        
-    ) AND
-    with COMP3331WithFailingMark
-    as (
-        select c.term, count(*)
-        from People p
-        join Students s on s.id = p.id
-        join Course_Enrolments ce on ce.student = s.id
-        join Courses c on c.id = ce.course
-        join Subjects subj on subj.id = c.subject
-        join Terms t on t.id = c.term
-        where subj.code = 'COMP3311' and 
-        ce.mark < 50 and 
-        t.year between 2009 and 2012
-        group by c.term        
+    WITH temp AS (
+        SELECT fm.term_id, fm.term, round (cast(fm.count AS numeric) / cast(tm.count AS numeric), 4) AS min_fail_rate
+        FROM total_marks_q5a tm JOIN failing_marks_q5a fm ON tm.term_id = fm.term_id
+        GROUP BY fm.term_id, fm.term, min_fail_rate
     )
-    create or replace view Q5a(term, min_fail_rate)
-    as
-    select wm.term, wm.count / fm.count as fail_rate
-    from COMP3331WithMark wm join COMP3331WithFailingMark fm on wm.term = fm.term
-    group by wm.term, fail_rate
-    order by fail_rate asc
-    limit 1;
+    SELECT term, min_fail_rate
+    FROM temp
+    WHERE min_fail_rate = (select min(min_fail_rate) FROM temp)
+    GROUP BY term, min_fail_rate
+    ;
 -- Q6 -------------------------------------------------------------------------------------
-    create or replace function 
+    create or replace function
         Q6(id integer,code text) returns integer
     as $$
-    select ce.mark
-    from People p
-    join Students s on s.id = $1
-    join Course_Enrolments ce on ce.student = s.id
-    join Courses c on c.id = ce.course
-    join Subjects subj on subj.id = c.subject
-    where subj.code = $2 
-    --... SQL statements, possibly using other views/functions defined by you ...
+    SELECT e.mark
+    FROM course_enrolments e
+    JOIN students stu ON e.student = stu.id
+    JOIN people p ON stu.id = $1
+    JOIN courses c ON c.id = e.course
+    JOIN subjects s ON s.id = c.subject
+    WHERE s.code = $2 
     $$ language sql;
+
 -- Q7 -------------------------------------------------------------------------------------
     -- e.g. 2019, 'T1'
     -- returns a list of all the postgraduate COMP courses (refers to Subjects.code starting with COMP) offered at the given year and session. 

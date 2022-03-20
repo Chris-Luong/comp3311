@@ -79,12 +79,12 @@ HAVING count(term_id) > 1;
 create or replace view total_marks_q5a(term_id, term, count)
 as
 SELECT c.term AS term_id, t.name, count(*)
-FROM People p
-JOIN Students stu ON stu.id = p.id
-JOIN Course_Enrolments e ON e.student = stu.id
-JOIN Courses c ON c.id = e.course
-JOIN Subjects s ON s.id = c.subject
-JOIN Terms t ON t.id = c.term
+FROM course_enrolments e
+JOIN students stu ON e.student = stu.id
+JOIN people p ON stu.id = p.id
+JOIN courses c ON c.id = e.course
+JOIN terms t ON t.id = c.term
+JOIN subjects s ON s.id = c.subject
 WHERE s.code = 'COMP3311' AND 
 e.mark IS NOT NULL AND 
 t.year BETWEEN 2009 AND 2012
@@ -93,12 +93,12 @@ GROUP BY c.term, t.name
 create or replace view failing_marks_q5a(term_id, term, count)
 as
 SELECT c.term AS term_id, t.name, count(*)
-FROM People p
-JOIN Students stu ON stu.id = p.id
-JOIN Course_Enrolments e ON e.student = stu.id
-JOIN Courses c ON c.id = e.course
-JOIN Subjects s ON s.id = c.subject
-JOIN Terms t ON t.id = c.term
+FROM course_enrolments e
+JOIN students stu ON e.student = stu.id
+JOIN people p ON stu.id = p.id
+JOIN courses c ON c.id = e.course
+JOIN subjects s ON s.id = c.subject
+JOIN terms t ON t.id = c.term
 WHERE s.code = 'COMP3311' AND 
 e.mark < 50 AND 
 t.year BETWEEN 2009 AND 2012
@@ -126,12 +126,12 @@ GROUP BY term, min_fail_rate
 create or replace view total_marks_q5b(term_id, term, count)
 as
 SELECT c.term AS term_id, t.name, count(*)
-FROM People p
-JOIN Students stu ON stu.id = p.id
-JOIN Course_Enrolments e ON e.student = stu.id
-JOIN Courses c ON c.id = e.course
-JOIN Subjects s ON s.id = c.subject
-JOIN Terms t ON t.id = c.term
+FROM course_enrolments e
+JOIN students stu ON e.student = stu.id
+JOIN people p ON stu.id = p.id
+JOIN courses c ON c.id = e.course
+JOIN subjects s ON s.id = c.subject
+JOIN terms t ON t.id = c.term
 WHERE s.code = 'COMP3311' AND 
 e.mark IS NOT NULL AND 
 t.year BETWEEN 2016 AND 2019
@@ -140,12 +140,12 @@ GROUP BY c.term, t.name
 create or replace view failing_marks_q5b(term_id, term, count)
 as
 SELECT c.term AS term_id, t.name, count(*)
-FROM People p
-JOIN Students stu ON stu.id = p.id
-JOIN Course_Enrolments e ON e.student = stu.id
-JOIN Courses c ON c.id = e.course
-JOIN Subjects s ON s.id = c.subject
-JOIN Terms t ON t.id = c.term
+FROM course_enrolments e
+JOIN students stu ON e.student = stu.id
+JOIN people p ON stu.id = p.id
+JOIN courses c ON c.id = e.course
+JOIN terms t ON t.id = c.term
+JOIN subjects s ON s.id = c.subject
 WHERE s.code = 'COMP3311' AND 
 e.mark < 50 AND 
 t.year BETWEEN 2016 AND 2019
@@ -167,26 +167,39 @@ GROUP BY term, min_fail_rate
 
 
 -- Q6
--- 	Q6(id integer,code text) returns integer
--- as $$
--- select ce.mark
--- from People p
--- join Students s ON s.id = $1
--- join Course_Enrolments ce ON ce.student = s.id
--- join Courses c on c.id = ce.course
--- join Subjects subj on subj.id = c.subject
--- where subj.code = $2 
--- $$ language sql;
+-- Explanation
+    -- Get a student's mark for course given subject code and student id
+    -- Will return NULL if code or id is invalide due to JOINs
+create or replace function
+	Q6(id integer,code text) returns integer
+as $$
+SELECT e.mark
+FROM course_enrolments e
+JOIN students stu ON e.student = stu.id
+JOIN people p ON stu.id = $1
+JOIN courses c ON c.id = e.course
+JOIN subjects s ON s.id = c.subject
+WHERE s.code = $2 
+$$ language sql;
 
 
 -- Q7
--- 	Q7(year integer, session text) returns table (code text)
--- as $$
--- --... SQL statements, possibly using other views/functions defined by you ...
--- $$ language sql;
+create or replace function
+	Q7(year integer, session text) returns table (code text)
+as $$
+SELECT s.code
+FROM course_enrolments e
+JOIN students stu ON e.student = stu.id
+JOIN people p ON stu.id = p.id
+JOIN courses c ON c.id = e.course
+JOIN terms t ON t.id = c.term
+JOIN subjects s ON s.id = c.subject
+WHERE s.code LIKE ~'^COMP.*$' AND s.career = 'PG' AND t.year = $1 AND t.session = $2
+$$ language sql;
 
 
 -- Q8
+-- create or replace function
 -- 	Q8(zid integer) returns setof TermTranscriptRecord
 -- as $$
 -- --... SQL statements, possibly using other views/functions defined by you ...
@@ -194,6 +207,7 @@ GROUP BY term, min_fail_rate
 
 
 -- Q9
+-- create or replace function
 -- 	Q9(gid integer) returns setof AcObjRecord
 -- as $$
 -- --... SQL statements, possibly using other views/functions defined by you ...
@@ -201,6 +215,7 @@ GROUP BY term, min_fail_rate
 
 
 -- Q10
+-- create or replace function
 -- 	Q10(code text) returns setof text
 -- as $$
 -- --... SQL statements, possibly using other views/functions defined by you ...
