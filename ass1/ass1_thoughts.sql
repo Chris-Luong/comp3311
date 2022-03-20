@@ -370,7 +370,7 @@
     join Courses c on c.id = ce.course
     join Subjects subj on subj.id = c.subject
     join Terms t on t.id = c.term
-    where subj.code like ~'^COMP.*$' and subj.career = 'PG' and t.year = $1 and t.session = $2
+    where subj.code like '%COMP%' and subj.career = 'PG' and t.year = $1 and t.session = $2
     -- TODO(Ryan): in db term session names are strange like X1, S2. No standard ones like T1 as mentioned in question? 
     --... SQL statements, possibly using other views/functions defined by you ...
     $$ language sql;
