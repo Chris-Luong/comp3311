@@ -190,10 +190,7 @@ create or replace function
 	Q7(year integer, session text) returns table (code text)
 as $$ 
 SELECT DISTINCT s.code
-FROM course_enrolments e
-JOIN students stu ON e.student = stu.id
-JOIN people p ON stu.id = p.id
-JOIN courses c ON c.id = e.course
+FROM courses c
 JOIN terms t ON t.id = c.term
 JOIN subjects s ON s.id = c.subject
 WHERE s.code LIKE '%COMP%' AND s.career = 'PG' AND t.year = $1 AND t.session = $2
