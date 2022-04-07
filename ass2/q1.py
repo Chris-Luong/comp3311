@@ -18,32 +18,38 @@ where c.role = 'director'
 group by name
 order by count desc, name;"""
 
-
-# process command-line args
-
-try:
-	argc = len(sys.argv)
-	if argc == 1: # filename is only argument
-		num = 10
-	else:
-		num = int(sys.argv[1])
-	if num < 1:
-		exit()
-except:
+def printError(usage, db, cur):
 	print(usage)
 	cur.close()
 	db.close()
 	exit()
+
+# process command-line args
+
+
+argc = len(sys.argv)
+
+if argc > 2: # Too many args
+	printError(usage, db, cur)
+
+if argc == 1: # filename is only argument
+	num = 10
+else:
+	try:
+		num = int(sys.argv[1])
+	except:
+		printError(usage, db, cur)
+
+if num < 1:
+	printError(usage, db, cur)
 
 # manipulate database
 
 try:
 	cur.execute(query)
 	for tuple in cur.fetchmany(num):
-		print(str(tuple[0]) + ' ' + tuple[1])
-	cur.close()
-	db.close()
-	
+		# print(str(tuple[0]) + ' ' + tuple[1])
+		print(f"{tuple[0]} {tuple[1]}")	
 except psycopg2.Error as err:
 	print("DB error: ", err)
 finally:

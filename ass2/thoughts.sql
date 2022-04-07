@@ -11,9 +11,15 @@
 
 -- Q2
     select m.rating, m.title, m.start_year
-    from movies m, aliases a
+    from movies m
     where title ~* 'mothra'
     order by rating desc, start_year, title;
+
+    select m.title, a.local_title, a.region, a.language, a.extra_info
+    from movies m join aliases a on a.movie_id = m.id
+    where m.id = -- the actual id %s
+    order by a.ordering;
+
 
     aliases as a, a.movie_id = m.id
     if count of above == 1,
