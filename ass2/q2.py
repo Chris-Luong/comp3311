@@ -13,12 +13,12 @@ usage = "Usage: q2.py 'PartialMovieTitle'"
 db = psycopg2.connect("dbname=imdb")
 cur = db.cursor()
 
-query1 = """select m.rating, m.title, m.start_year, m.id
+searchQuery = """select m.rating, m.title, m.start_year, m.id
 from movies m
 where title ~* '%s'
 order by rating desc, start_year, title;"""
 
-query2 = """select a.local_title, a.region, a.language, a.extra_info
+aliasQuery = """select a.local_title, a.region, a.language, a.extra_info
 from movies m join aliases a on a.movie_id = m.id
 where m.id = %s
 order by a.ordering;"""
@@ -67,18 +67,19 @@ else:
 # manipulate database
 
 try:
-	cur.execute(query1 % searchPhrase)
+	cur.execute(searchQuery % searchPhrase)
 	if cur.rowcount < 1: # Empty list
 		print(f"No movie matching '{searchPhrase}'")
 		exit()
 	elif cur.rowcount == 1: # Find aliases
 		res = cur.fetchone()
-		cur.execute(query2 % res[3])
+		rating, title, year, id = res
+		cur.execute(aliasQuery % id)
 
 		if cur.rowcount < 1:
-			print(f"{res[1]} ({res[2]}) has no alternative releases")
+			print(f"{title} ({year}) has no alternative releases")
 			exit()
-		print(f"{res[1]} ({res[2]}) was also released as")
+		print(f"{title} ({year}) was also released as")
 		for tuple in cur.fetchall():
 			findAliases(tuple)
 		exit()
@@ -87,7 +88,8 @@ try:
 	print("===============")
 	
 	for tuple in cur.fetchall():
-		print(f"{tuple[0]} {tuple[1]} ({tuple[2]})")
+		rating, title, year, id = tuple
+		print(f"{rating} {title} ({year})")
 except psycopg2.Error as err:
 	print("DB error: ", err)
 finally:

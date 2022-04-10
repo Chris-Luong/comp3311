@@ -48,8 +48,8 @@ if num < 1:
 try:
 	cur.execute(query)
 	for tuple in cur.fetchmany(num):
-		# print(str(tuple[0]) + ' ' + tuple[1])
-		print(f"{tuple[0]} {tuple[1]}")	
+		numFilms, name = tuple
+		print(f"{numFilms} {name}")	
 except psycopg2.Error as err:
 	print("DB error: ", err)
 finally:
