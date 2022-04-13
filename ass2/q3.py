@@ -45,6 +45,11 @@ crewQuery = """
 """
 
 def listDetails(movie_id):
+	"""
+	List details of principal actors and crews.
+	Capitalse first letter of crew roles and replace underscore
+	with space.
+	"""
 	print("Starring")
 	cur.execute(actorQuery % movie_id)
 	for tuple in cur.fetchall():
@@ -90,7 +95,7 @@ try:
 		else:
 			print(f"No movie matching '{searchPhrase}'")
 		exit()
-	elif cur.rowcount > 1:
+	elif cur.rowcount > 1: # Print matching movies if there's more than 1 result
 		if hasYear:
 			print(f"Movies matching '{data[0]}' {data[1]}")
 		else:
