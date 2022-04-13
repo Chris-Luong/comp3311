@@ -1,7 +1,6 @@
 # COMP3311 22T1 Ass2 ... print info about different releases for Movie
 # Christopher Luong April 2022
 
-from re import search
 import sys
 import psycopg2
 
@@ -13,15 +12,19 @@ usage = "Usage: q2.py 'PartialMovieTitle'"
 db = psycopg2.connect("dbname=imdb")
 cur = db.cursor()
 
-searchQuery = """select m.rating, m.title, m.start_year, m.id
-from movies m
-where title ~* '%s'
-order by rating desc, start_year, title;"""
+searchQuery = """
+	select m.rating, m.title, m.start_year, m.id
+	from movies m
+	where title ~* '%s'
+	order by rating desc, start_year, title;
+"""
 
-aliasQuery = """select a.local_title, a.region, a.language, a.extra_info
-from movies m join aliases a on a.movie_id = m.id
-where m.id = %s
-order by a.ordering;"""
+aliasQuery = """
+	select a.local_title, a.region, a.language, a.extra_info
+	from movies m join aliases a on a.movie_id = m.id
+	where m.id = %s
+	order by a.ordering;
+"""
 
 def findAliases(tuple):
 	"""

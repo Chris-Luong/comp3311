@@ -12,11 +12,13 @@ usage = "Usage: q1.py [N]"
 db = psycopg2.connect("dbname=imdb")
 cur = db.cursor()
 
-query = """select count(name) as count, name
-from names n join crew_roles c on n.id = c.name_id
-where c.role = 'director'
-group by name
-order by count desc, name;"""
+query = """
+	select count(name) as count, name
+	from names n join crew_roles c on n.id = c.name_id
+	where c.role = 'director'
+	group by name
+	order by count desc, name;
+"""
 
 def printError(usage, db, cur):
 	print(usage)
