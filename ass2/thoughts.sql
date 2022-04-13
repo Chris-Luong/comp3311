@@ -61,6 +61,14 @@
     where m.title ~* 'Avatar'
     order by p.ordering, a.played;
 
+    -- Gets all principal crew members in correct order
+    select distinct p.ordering, m.title, m.start_year, n.name, c.role, n.id, m.id as m_id
+    from principals p join names n on n.id = p.name_id
+    join movies m on p.movie_id = m.id
+    join crew_roles c on m.id = c.movie_id and c.name_id = p.name_id
+    where m.title ~* 'Avatar'
+    order by p.ordering, c.role;
+
     -- Gets correct actors with 'played' but not orderd by ordering
     select distinct m.title, m.start_year, n.name, a.played, n.id, m.id as m_id
     from acting_roles a join names n on n.id = a.name_id
@@ -118,11 +126,12 @@
     from unordered join principals p on p.name_id = unordered.id
     order by ordering;
 -- Q4
-    select distinct n.name, m.title, m.rating
+    select distinct n.id, n.name, m.title, m.rating, n.birth_year, n.death_year
     from movies m join principals p on p.movie_id = m.id
     join names n on n.id = p.name_id
     where n.name ~* 'spike lee'
-    group by n.name, m.title, m.rating;
+    group by n.id, name, m.title, m.rating, birth_year, death_year
+    order by name, birth_year, n.id;
 
 
     with temp as 
@@ -130,5 +139,4 @@
     from movies m join principals p on p.movie_id = m.id
     join names n on n.id = p.name_id
     where n.name ~* 'spike lee')
-
     select round(cast(avg(rating) as decimal),1) from temp;
