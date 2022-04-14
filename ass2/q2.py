@@ -9,8 +9,7 @@ import psycopg2
 # set up some globals
 
 usage = "Usage: q2.py 'PartialMovieTitle'"
-db = psycopg2.connect("dbname=imdb")
-cur = db.cursor()
+db = None
 
 searchQuery = """
 	select m.rating, m.title, m.start_year, m.id
@@ -63,13 +62,13 @@ if argc == 2:
 	searchPhrase = str(sys.argv[1]).replace("'", "''")
 else:
 	print(usage)
-	cur.close()
-	db.close()
 	exit()
 
 # manipulate database
 
 try:
+	db = psycopg2.connect("dbname=imdb")
+	cur = db.cursor()
 	cur.execute(searchQuery % searchPhrase)
 	if cur.rowcount < 1: # Empty list
 		print(f"No movie matching '{searchPhrase}'")

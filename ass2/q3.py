@@ -9,8 +9,7 @@ import psycopg2
 # set up some globals
 
 usage = "Usage: q3.py 'MovieTitlePattern' [Year]"
-db = psycopg2.connect("dbname=imdb")
-cur = db.cursor()
+db = None
 
 searchQueryNoYear = """
 	select m.rating, m.title, m.start_year, m.id
@@ -61,10 +60,9 @@ def listDetails(movie_id):
 		ordering, name, role, id = tuple
 		print(f" {name}: {role.capitalize().replace(' ', '_')}")
 
-def printError(usage, db, cur):
+def printError(usage):
 	print(usage)
-	cur.close()
-	db.close()
+
 	exit()
 
 # process command-line args
@@ -78,13 +76,15 @@ elif argc == 3:
 		data = (str(sys.argv[1]).replace("'", "''"), int(sys.argv[2]))
 		hasYear = True
 	except:
-		printError(usage, db, cur)
+		printError(usage)
 else:
-	printError(usage, db, cur)
+	printError(usage)
 
 # manipulate database
 
 try:
+	db = psycopg2.connect("dbname=imdb")
+	cur = db.cursor()
 	if hasYear:
 		cur.execute(searchQueryWithyear % data)
 	else:

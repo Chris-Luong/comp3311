@@ -9,8 +9,7 @@ import psycopg2
 # set up some globals
 
 usage = "Usage: q1.py [N]"
-db = psycopg2.connect("dbname=imdb")
-cur = db.cursor()
+db = None
 
 query = """
 	select count(name) as count, name
@@ -20,10 +19,8 @@ query = """
 	order by count desc, name;
 """
 
-def printError(usage, db, cur):
+def printError(usage):
 	print(usage)
-	cur.close()
-	db.close()
 	exit()
 
 # process command-line args
@@ -32,7 +29,7 @@ def printError(usage, db, cur):
 argc = len(sys.argv)
 
 if argc > 2: # Too many args
-	printError(usage, db, cur)
+	printError(usage)
 
 if argc == 1: # filename is only argument
 	num = 10
@@ -40,14 +37,16 @@ else:
 	try:
 		num = int(sys.argv[1])
 	except:
-		printError(usage, db, cur)
+		printError(usage) # arg is not a number
 
 if num < 1:
-	printError(usage, db, cur)
+	printError(usage)
 
 # manipulate database
 
 try:
+	db = psycopg2.connect("dbname=imdb")
+	cur = db.cursor()
 	cur.execute(query)
 	for tuple in cur.fetchmany(num):
 		numFilms, name = tuple
