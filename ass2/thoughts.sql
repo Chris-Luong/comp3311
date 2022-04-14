@@ -133,10 +133,33 @@
     group by n.id, name, m.title, m.rating, birth_year, death_year
     order by name, birth_year, n.id;
 
+    -- is missing darrell rooney (he is not in principal)
+    select distinct n.id, n.name, n.birth_year, n.death_year
+    from principals p join names n on n.id = p.name_id
+    where n.name ~* 'rooney'
+    group by n.id, name, birth_year, death_year
+    order by name, birth_year, n.id;
 
-    with temp as 
-    (select distinct m.rating
+    -- get all info in this query and do calculation, etc. in python? below is spike lee
+    with temp as
+    (select distinct m.rating, m.title, m.start_year, genre
     from movies m join principals p on p.movie_id = m.id
-    join names n on n.id = p.name_id
-    where n.name ~* 'spike lee')
-    select round(cast(avg(rating) as decimal),1) from temp;
+    join movie_genres g on g.movie_id = m.id 
+    where p.name_id = 20000490)
+    select round(cast(avg(rating) as decimal), 1), title from temp;
+
+
+    -- gets everything with proper count of genres, but duplicated
+    with temp as
+    (select distinct m.rating, m.title, m.start_year, g.genre
+    from movies m join principals p on p.movie_id = m.id
+    join movie_genres g on g.movie_id = m.id 
+    where p.name_id = 20000490)
+    select t.rating, t.title, t.start_year, t.genre, c.cnt
+    from temp t
+    join (
+        select genre, count(genre) as cnt
+        from temp
+        group by genre
+    ) c on c.genre = t.genre
+    order by cnt desc;

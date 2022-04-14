@@ -18,7 +18,7 @@ searchQueryNoYear = """
 	order by rating desc, start_year, title;
 """
 
-searchQueryWithyear = """
+searchQueryWithYear = """
 	select m.rating, m.title, m.start_year, m.id
 	from movies m
 	where title ~* '%s' and m.start_year = %s
@@ -62,7 +62,6 @@ def listDetails(movie_id):
 
 def printError(usage):
 	print(usage)
-
 	exit()
 
 # process command-line args
@@ -86,7 +85,7 @@ try:
 	db = psycopg2.connect("dbname=imdb")
 	cur = db.cursor()
 	if hasYear:
-		cur.execute(searchQueryWithyear % data)
+		cur.execute(searchQueryWithYear % data)
 	else:
 		cur.execute(searchQueryNoYear % searchPhrase)
 	if cur.rowcount < 1:

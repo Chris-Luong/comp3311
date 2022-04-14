@@ -74,8 +74,7 @@ try:
 		print(f"No movie matching '{searchPhrase}'")
 		exit()
 	elif cur.rowcount == 1: # Find aliases
-		res = cur.fetchone()
-		rating, title, year, id = res
+		rating, title, year, id = cur.fetchone()
 		cur.execute(aliasQuery % id)
 
 		if cur.rowcount < 1:
