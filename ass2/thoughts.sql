@@ -126,18 +126,44 @@
     from unordered join principals p on p.name_id = unordered.id
     order by ordering;
 -- Q4
+    -- Get movies, actors and crew into a query
+    -- Then do average calculation by assigning cur.fetchall to a list of tuple thing
+    -- Then use this in on fn to loop and get avg. And in another fn to print the details.
+    -- (Do this if cannot get average in the same query)
+    -- This can make the genre query easier since duplicates can be removed if only finding
+    -- distinct genre and count?
+
+    -- PRINT NAME EVEN IF NOT PRINCIPAL IF MULTIPLE NAMES RETURNED, means u can't just get principles
+
+    -- For doing avg, since there are duplicates, have var current movie to check if the same as
+    -- the one you are indexed at. If same, do not add avg calc. Else add to avg calc.
+
+    -- Will probably need a second (maybe third if below doesn't work) and match the movies after
+    -- assigning the query(s) to vars
+
+    -- So one query gets everything for first bit (rating, title, genre, count) which is query at
+    -- bottom but remove start_year.
+
+    -- Possibly could make the actor one a temp 'with' and combine this with crew?
+    select distinct m.title, m.start_year, n.name, a.played, n.id, m.id as m_id
+    from principals p join names n on n.id = p.name_id
+    join movies m on p.movie_id = m.id
+    join acting_roles a on m.id = a.movie_id and a.name_id = p.name_id
+    where n.id = 20000490
+    order by m.start_year;
+
+    select distinct m.title, m.start_year, n.name, c.role, n.id, m.id as m_id
+    from principals p join names n on n.id = p.name_id
+    join movies m on p.movie_id = m.id
+    join crew_roles c on m.id = c.movie_id and c.name_id = p.name_id
+    where n.id = 20000490
+    order by start_year;
+
     select distinct n.id, n.name, m.title, m.rating, n.birth_year, n.death_year
     from movies m join principals p on p.movie_id = m.id
     join names n on n.id = p.name_id
     where n.name ~* 'spike lee'
     group by n.id, name, m.title, m.rating, birth_year, death_year
-    order by name, birth_year, n.id;
-
-    -- is missing darrell rooney (he is not in principal)
-    select distinct n.id, n.name, n.birth_year, n.death_year
-    from principals p join names n on n.id = p.name_id
-    where n.name ~* 'rooney'
-    group by n.id, name, birth_year, death_year
     order by name, birth_year, n.id;
 
     -- get all info in this query and do calculation, etc. in python? below is spike lee
@@ -146,7 +172,8 @@
     from movies m join principals p on p.movie_id = m.id
     join movie_genres g on g.movie_id = m.id 
     where p.name_id = 20000490)
-    select round(cast(avg(rating) as decimal), 1), title from temp;
+    select round(cast(avg(rating) as decimal), 1)
+    from temp;
 
 
     -- gets everything with proper count of genres, but duplicated
@@ -162,4 +189,4 @@
         from temp
         group by genre
     ) c on c.genre = t.genre
-    order by cnt desc;
+    order by cnt desc, t.genre;
