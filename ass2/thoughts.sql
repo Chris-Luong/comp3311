@@ -159,6 +159,15 @@
     where n.id = 20000490
     order by start_year;
 
+    -- Gets all actor and crew roles with null if not in a movie
+    select distinct m.title, m.start_year, n.name, a.played, c.role, n.id, m.id as m_id
+    from principals p join names n on n.id = p.name_id
+    join movies m on p.movie_id = m.id
+    full outer join acting_roles a on m.id = a.movie_id and a.name_id = p.name_id
+    full outer join crew_roles c on m.id = c.movie_id and c.name_id = p.name_id
+    where n.id = 20000490
+    order by start_year;
+
     select distinct n.id, n.name, m.title, m.rating, n.birth_year, n.death_year
     from movies m join principals p on p.movie_id = m.id
     join names n on n.id = p.name_id
