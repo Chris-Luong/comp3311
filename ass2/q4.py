@@ -26,7 +26,7 @@ searchQueryWithYear = """
     group by n.id, name, birth_year, death_year
     order by name, birth_year, n.id;
 """
-
+# Do 2 queries, one for genre and ratings (calc avg in py), one for actors and crew
 personalRatingQuery= """
 	with temp as 
 	(select distinct m.rating
@@ -37,8 +37,23 @@ personalRatingQuery= """
 """ # get the id not the name for personal rating thing OR LOOP THRU FETCHALL AND GET AVG
 
 def doFunction():
+	"""
+	For genres etc. param is the res of fetchall
+	Loop through to get top genres, skipping duplicates.
+	For doing avg, since there are duplicates, have var current movie to check if the same as
+    the one you are indexed at. If same, do not add avg calc. Else add to avg calc.
+	For genre, array[3], check if current genre is same as any in array. If not,
+	compare count and insert accordingly.
+	"""
 	print("dfsd")
 	# Make dictionary of genres as key and count as values?
+
+def anotherFunc():
+	"""
+	use actor and crew query to go thru and print with if statements for
+	when column has None
+	"""
+	print("sfheu")
 
 def printError(usage):
 	print(usage)
