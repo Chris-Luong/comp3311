@@ -21,7 +21,7 @@ def listDetails(movie_id):
 	cur.execute(crewQuery % movie_id)
 	for tuple in cur.fetchall():
 		ordering, name, role, id = tuple
-		print(f" {name}: {role.capitalize().replace(' ', '_')}")
+		print(f" {name}: {role.capitalize().replace('_', ' ')}")
 
 def printError(usage):
 	print(usage)

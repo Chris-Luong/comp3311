@@ -16,12 +16,15 @@ def getRatingAndGenres(result):
 	compare count and insert accordingly.
 	"""
 	print("===============")
-	# genres = [None] * 3
-	# genreCounts = [None] * 3
+	if not result:
+		print("Personal Rating: 0")
+		print("Top 3 Genres:")
+		return False
+	
 	genres = {}
-	topThree = {}
+	topThreeMaybe = {}
 	avgRating = 0
-	numElements = 1
+	numElements = 0
 	currentMovie = ""
 
 	for tuple in result:
@@ -34,17 +37,16 @@ def getRatingAndGenres(result):
 		currentMovie = title
 		avgRating += rating
 		numElements += 1
-	
-	numElements -= 1
+	sortedGenres = sorted(genres.keys())
 	avgRating = avgRating / numElements
-	topThree = sorted(genres, key=genres.get, reverse=True)[:3]
+	# Maybe since there could be less than 3
+	topThreeMaybe = sorted(sortedGenres, key=genres.get, reverse=True)[:3]
 	
-	print("Personal Rating: {:.1f}".format(avgRating))
+	print(f"Personal Rating: {avgRating:.1f}")
 	print("Top 3 Genres:")
-	for genre in topThree:
+	for genre in topThreeMaybe:
 		print(f" {genre}")
-
-	# Make dictionary of genres as key and count as values?
+	return True
 
 def createGenreDict(genres, curGenre, cnt):
 	for genre in genres:
@@ -52,40 +54,57 @@ def createGenreDict(genres, curGenre, cnt):
 			return
 	genres[curGenre] = cnt
 
-def getMoviesAndRoles(result):
-	"""
-	Assumes actor only plays one character and possibly multiple crew roles
-	"""
+def getMoviesAndRoles(result, hasMovies):
 	print("===============")
+	if not hasMovies:
+		return
+
 	roles = []
-	character = ""
+	characters = []
 	curMovie = None
+	curYear = None
+
 	for tuple in result:
 		title, year, played, role, id = tuple
 		
 		if curMovie == None:
-			curMovie = title
-			character = played
-			createRolesList(roles, role)
+			curMovie = title # 	NEED TO PRINT THE LAST MOVIE COS RN ITS PRINTING THE ONE BEFORE
+			curYear = year
+			createRolesList(roles, role, characters, played)
 		elif curMovie != title:
-			printMovieDetails(curMovie, year, character, roles)
+			printMovieDetails(curMovie, curYear, characters, roles)
 			curMovie = title
-			character = played
+			curYear = year
+			characters = []
 			roles = []
-			createRolesList(roles, role)
+			createRolesList(roles, role, characters, played)
 		else: # curMovie == title
-			createRolesList(roles, role)
+			createRolesList(roles, role, characters, played)
+	
+	printMovieDetails(curMovie, curYear, characters, roles)
 
-def createRolesList(roles, role):
+def createRolesList(roles, role, characters, played):
+	canAppend = True
 	if role is not None:
-		roles.append(role.capitalize().replace(' ', '_'))
-
-def printMovieDetails(title, year, played, roles):
-	print(f"{title} ({year})")
+		roles.append(role)
 	if played is not None:
-		print(f" playing {played}")
+		if not characters:
+			characters.append(played)
+	else:
+		return
+	for character in characters:
+		if played == character:
+			canAppend = False
+			break
+	if canAppend:
+		characters.append(played)
+
+def printMovieDetails(title, year, characters, roles):
+	print(f"{title} ({year})")
+	for character in characters:
+		print(f" playing {character}")
 	for role in roles:
-		print(f" as {role}")
+		print(f" as {role.capitalize().replace('_', ' ')}")
 
 def printError(usage):
 	print(usage)
@@ -191,10 +210,11 @@ try:
 			print(f"Filmography for {name} ({birthYear}-{deathYear})")
 		cur.execute(genreRatingQuery % id)
 		res1 = cur.fetchall()
-		getRatingAndGenres(res1)
+		hasMovies = True
+		hasMovies = getRatingAndGenres(res1)
 		cur.execute(movieActorCrewQuery % id)
 		res2 = cur.fetchall()
-		getMoviesAndRoles(res2)
+		getMoviesAndRoles(res2, hasMovies)
 except psycopg2.Error as err:
 	print("DB error: ", err)
 finally:
