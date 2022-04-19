@@ -6,6 +6,10 @@ import psycopg2
 
 # define any local helper functions here
 
+def printError(usage):
+	print(usage)
+	exit()
+
 # set up some globals
 
 usage = "Usage: q1.py [N]"
@@ -18,10 +22,6 @@ query = """
 	group by name
 	order by count desc, name;
 """
-
-def printError(usage):
-	print(usage)
-	exit()
 
 # process command-line args
 
@@ -54,6 +54,6 @@ try:
 except psycopg2.Error as err:
 	print("DB error: ", err)
 finally:
-	if cur:
+	if db:
 		cur.close()
 		db.close()

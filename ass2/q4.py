@@ -6,6 +6,91 @@ import psycopg2
 
 # define any local helper functions here
 
+def getRatingAndGenres(result):
+	"""
+	For genres etc. param is the res of fetchall
+	Loop through to get top genres, skipping duplicates.
+	For doing avg, since there are duplicates, have var current movie to check if the same as
+    the one you are indexed at. If same, do not add avg calc. Else add to avg calc.
+	For genre, array[3], check if current genre is same as any in array. If not,
+	compare count and insert accordingly.
+	"""
+	print("===============")
+	# genres = [None] * 3
+	# genreCounts = [None] * 3
+	genres = {}
+	topThree = {}
+	avgRating = 0
+	numElements = 1
+	currentMovie = ""
+
+	for tuple in result:
+		rating, title, genre, cnt = tuple
+		
+		createGenreDict(genres, genre, cnt)
+		
+		if currentMovie == title:
+			continue
+		currentMovie = title
+		avgRating += rating
+		numElements += 1
+	
+	numElements -= 1
+	avgRating = avgRating / numElements
+	topThree = sorted(genres, key=genres.get, reverse=True)[:3]
+	
+	print("Personal Rating: {:.1f}".format(avgRating))
+	print("Top 3 Genres:")
+	for genre in topThree:
+		print(f" {genre}")
+
+	# Make dictionary of genres as key and count as values?
+
+def createGenreDict(genres, curGenre, cnt):
+	for genre in genres:
+		if genre == curGenre:
+			return
+	genres[curGenre] = cnt
+
+def getMoviesAndRoles(result):
+	"""
+	Assumes actor only plays one character and possibly multiple crew roles
+	"""
+	print("===============")
+	roles = []
+	character = ""
+	curMovie = None
+	for tuple in result:
+		title, year, played, role, id = tuple
+		
+		if curMovie == None:
+			curMovie = title
+			character = played
+			createRolesList(roles, role)
+		elif curMovie != title:
+			printMovieDetails(curMovie, year, character, roles)
+			curMovie = title
+			character = played
+			roles = []
+			createRolesList(roles, role)
+		else: # curMovie == title
+			createRolesList(roles, role)
+
+def createRolesList(roles, role):
+	if role is not None:
+		roles.append(role.capitalize().replace(' ', '_'))
+
+def printMovieDetails(title, year, played, roles):
+	print(f"{title} ({year})")
+	if played is not None:
+		print(f" playing {played}")
+	for role in roles:
+		print(f" as {role}")
+
+def printError(usage):
+	print(usage)
+	exit()
+
 # set up some globals
 
 usage = "Usage: q4.py 'NamePattern' [Year]"
@@ -26,38 +111,32 @@ searchQueryWithYear = """
     group by n.id, name, birth_year, death_year
     order by name, birth_year, n.id;
 """
-# Do 2 queries, one for genre and ratings (calc avg in py), one for actors and crew
-personalRatingQuery= """
-	with temp as 
-	(select distinct m.rating
-	from movies m join principals p on p.movie_id = m.id
-	join names n on n.id = p.name_id
-	where n.id = %s)
-	select round(cast(avg(rating) as decimal),1) from temp;
-""" # get the id not the name for personal rating thing OR LOOP THRU FETCHALL AND GET AVG
 
-def doFunction():
-	"""
-	For genres etc. param is the res of fetchall
-	Loop through to get top genres, skipping duplicates.
-	For doing avg, since there are duplicates, have var current movie to check if the same as
-    the one you are indexed at. If same, do not add avg calc. Else add to avg calc.
-	For genre, array[3], check if current genre is same as any in array. If not,
-	compare count and insert accordingly.
-	"""
-	print("dfsd")
-	# Make dictionary of genres as key and count as values?
+genreRatingQuery= """
+    with temp as
+    (select distinct m.rating, m.title, g.genre
+    from movies m join principals p on p.movie_id = m.id
+    join movie_genres g on g.movie_id = m.id 
+    where p.name_id = %s)
+    select t.rating, t.title, t.genre, c.cnt
+    from temp t
+    join (
+        select genre, count(genre) as cnt
+        from temp
+        group by genre
+    ) c on c.genre = t.genre
+    order by t.title;
+"""
 
-def anotherFunc():
-	"""
-	use actor and crew query to go thru and print with if statements for
-	when column has None
-	"""
-	print("sfheu")
-
-def printError(usage):
-	print(usage)
-	exit()
+movieActorCrewQuery = """
+    select distinct m.title, m.start_year, a.played, c.role, n.id
+    from principals p join names n on n.id = p.name_id
+    join movies m on p.movie_id = m.id
+    full outer join acting_roles a on m.id = a.movie_id and a.name_id = p.name_id
+    full outer join crew_roles c on m.id = c.movie_id and c.name_id = p.name_id
+    where n.id = %s
+    order by start_year;
+"""
 
 # process command-line args
 
@@ -105,16 +184,20 @@ try:
 	else:
 		id, name, birthYear, deathYear = cur.fetchone()
 		if birthYear == None:
-			print(f"{name} (???)")
+			print(f"Filmography for {name} (???)")
 		elif deathYear == None:
-			print(f"{name} ({birthYear}-)")
+			print(f"Filmography for {name} ({birthYear}-)")
 		else:
-			print(f"{name} ({birthYear}-{deathYear})")
-		# do function thiung
+			print(f"Filmography for {name} ({birthYear}-{deathYear})")
+		cur.execute(genreRatingQuery % id)
+		res1 = cur.fetchall()
+		getRatingAndGenres(res1)
+		cur.execute(movieActorCrewQuery % id)
+		res2 = cur.fetchall()
+		getMoviesAndRoles(res2)
 except psycopg2.Error as err:
 	print("DB error: ", err)
 finally:
 	if db:
 		cur.close()
 		db.close()
-

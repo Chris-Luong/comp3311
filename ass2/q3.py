@@ -6,6 +6,27 @@ import psycopg2
 
 # define any local helper functions here
 
+def listDetails(movie_id):
+	"""
+	List details of principal actors and crews.
+	Capitalse first letter of crew roles and replace underscore
+	with space.
+	"""
+	print("Starring")
+	cur.execute(actorQuery % movie_id)
+	for tuple in cur.fetchall():
+		ordering, actor, played, id = tuple
+		print(f" {actor} as {played}")
+	print("and with")
+	cur.execute(crewQuery % movie_id)
+	for tuple in cur.fetchall():
+		ordering, name, role, id = tuple
+		print(f" {name}: {role.capitalize().replace(' ', '_')}")
+
+def printError(usage):
+	print(usage)
+	exit()
+
 # set up some globals
 
 usage = "Usage: q3.py 'MovieTitlePattern' [Year]"
@@ -42,27 +63,6 @@ crewQuery = """
 	where m.id = %s
 	order by p.ordering, c.role;
 """
-
-def listDetails(movie_id):
-	"""
-	List details of principal actors and crews.
-	Capitalse first letter of crew roles and replace underscore
-	with space.
-	"""
-	print("Starring")
-	cur.execute(actorQuery % movie_id)
-	for tuple in cur.fetchall():
-		ordering, actor, played, id = tuple
-		print(f" {actor} as {played}")
-	print("and with")
-	cur.execute(crewQuery % movie_id)
-	for tuple in cur.fetchall():
-		ordering, name, role, id = tuple
-		print(f" {name}: {role.capitalize().replace(' ', '_')}")
-
-def printError(usage):
-	print(usage)
-	exit()
 
 # process command-line args
 

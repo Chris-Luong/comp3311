@@ -6,25 +6,6 @@ import psycopg2
 
 # define any local helper functions here
 
-# set up some globals
-
-usage = "Usage: q2.py 'PartialMovieTitle'"
-db = None
-
-searchQuery = """
-	select m.rating, m.title, m.start_year, m.id
-	from movies m
-	where title ~* '%s'
-	order by rating desc, start_year, title;
-"""
-
-aliasQuery = """
-	select a.local_title, a.region, a.language, a.extra_info
-	from movies m join aliases a on a.movie_id = m.id
-	where m.id = %s
-	order by a.ordering;
-"""
-
 def findAliases(tuple):
 	"""
 	If only 1 movie is returned, list out its aliases
@@ -53,6 +34,24 @@ def findAliases(tuple):
 	else:
 		print(f"'{tuple[0]}'")
 
+# set up some globals
+
+usage = "Usage: q2.py 'PartialMovieTitle'"
+db = None
+
+searchQuery = """
+	select m.rating, m.title, m.start_year, m.id
+	from movies m
+	where title ~* '%s'
+	order by rating desc, start_year, title;
+"""
+
+aliasQuery = """
+	select a.local_title, a.region, a.language, a.extra_info
+	from movies m join aliases a on a.movie_id = m.id
+	where m.id = %s
+	order by a.ordering;
+"""
 
 # process command-line args
 
